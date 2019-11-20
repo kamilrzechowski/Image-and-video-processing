@@ -10,48 +10,16 @@ noise = img_blured - round(img_blured);
 
 %fourier transform
 img_fft = fftshift(fft2(img_blured));
-%imagesc(abs(log2(img_fft)))
+% imagesc(abs(log2(img_fft)))
 
-%% winner filter
-% Compute the Wiener restoration filter:
-%
-%                   H*(k,l)
-% G(k,l)  =  ------------------------------
-%            |H(k,l)|^2 + S_u(k,l)/S_x(k,l)
-%
-% where S_x is the signal power spectrum and S_u is the noise power
-% spectrum.
-%
-% To minimize issues associated with divisions, the equation form actually
-% implemented here is this:
-%
-%                   H*(k,l) S_x(k,l)
-% G(k,l)  =  ------------------------------
-%            |H(k,l)|^2 S_x(k,l) + S_u(k,l)
-
-%fft of bluring function
-%H = psf2otf(h, size(img_org));
-%H = fft2(h,M,M);
-H = fftshift(fft2(h,M,M));
-%H_conj = conj(H);
-%HH = H_conj.*H; %% = (abs(H).^2); the same
-%power spectrum of original image
-%S_f = log10(abs(fftshift(fft2(img_org))).^2 );
-
-   
-denom = H.*(abs(H).^2);
-denom = denom + fftshift(fft2(noise));
-%make sure the denominator is not zero anywhere
-denom = max(denom, sqrt(eps));
-
-G = (abs(H).^2) ./ denom;
-clear denom
-
-% Apply the filter G in the frequency domain.
-J = ifft2(fftshift(G .* fftshift(fft2(img_blured))));
-clear G
-
-% If I and PSF are both real, then any nonzero imaginary part of J is due to
-J = real(J);
-J = cast(rescale(J,0,255),'uint8');
-imshow(J);
+% fig = figure;
+subplot(121); imshow(fftshift(fft2(img_org)));  title('Fourier spectrum original img');
+subplot(122); imshow(fftshift(fft2(img_blured)));  title('Fourier spectrum degraded img');
+% print(fig,'spectra','-dpng');
+%% wf
+im_out = wiener_filter(0, img_blured/255, h, var(noise(:)));
+% fig = figure;
+subplot(131); imshow(img_org); title('original image');
+subplot(132); imshow(uint8(img_blured)); title('degradated image');
+subplot(133); imshow(im_out); title('restored image');
+% print(fig,'Wiener','-dpng');
